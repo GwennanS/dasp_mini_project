@@ -1,5 +1,12 @@
 # DASP_mini_project
 
+Add the datafiles from the assignment to a local data folder in the root. These files are expected:
+- data/clean_speech.wav
+- data/clean_speech_2.wav
+- data/babble_noise.wav
+- data/aritificial_nonstat_noise.wav
+- data/Speech_shaped_noise.wav
+
 # Assignment
 
 During the course a mini project is conducted. In this project, algorithms for speech enhancement are designed, implemented (in Matlab), evaluated, and documented. The project work is carried out in groups of 2 students which are formed in the beginning of the course. It is expected that some project work must be carried out either at home or at the university. The physical outcome of the project is a technical report motivating the algorithm design and describing the implementation and evaluation of the algorithms. As this technical report will be discussed during the evaluation, participation in the mini project is compulsory in order to qualify for the course exam.
