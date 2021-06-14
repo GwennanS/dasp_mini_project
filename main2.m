@@ -37,7 +37,7 @@ for i = 1:l
     FRAMESFFT(i, :) = framefft;
     FRAMESMAG(i, :) = abs(framefft);
     FRAMESPHA(i, :) = angle(framefft);
-    FRAMESPSD(i, :) = (1/L) * (FRAMESMAG(i, :)).^2;
+    FRAMESPSD(i, :) = (FRAMESMAG(i, :)).^2;
 end
 
 %% Calculate bartlett for each frame
@@ -54,29 +54,62 @@ for i = 1:l
     FRAMESbartlett(i, :) = 1/M * sumFRAMES;
 end
 
+expSmoother = FRAMESPSD;
+alph = 0.98;
+for i = 2:l
+    expSmoother(i, :) = alph * expSmoother(i-1, :) + (1-alph) * expSmoother(i, :);
+end
 %% Find noise in a way???
-FRAMESNOISE = movmin((FRAMESbartlett), 20, 2);
+FRAMESNOISE = zeros(l, frame_size*2);
+%FRAMESNOISE = movmin((expSmoother), 10, 2);
 %filtered = FRAMESPSD - FRAMESNOISE;
+
+sumNOISE = zeros(1, frame_size*2);
+for i = 1:20 
+    sumNOISE = sumNOISE + FRAMESPSD(i, :);
+end
+
+vadNOISE = sumNOISE * 1/5;
+for i = 1:l
+    FRAMESNOISE(i, :) = vadNOISE;
+end
+
+
+%% power spectral subtraction
+pss = max((1-(FRAMESNOISE  ./ FRAMESPSD)), 0.2) .^0.5;
 
 %% Calculate SNR
 priori_speech = zeros(1, frame_size*2); 
-gain = zeros(size(FRAMES));
+weiner = zeros(l, frame_size*2);
 alp = 0.96;
 for i = 1:l
     first_part = (priori_speech.^2) ./ (FRAMESNOISE(i, :));
     second_part = max((FRAMESPSD(i, :)) ./ (FRAMESNOISE(i, :)) - 1, 0);
     SNR = (alp * first_part) + (1-alp) * second_part;
-    gain(i, :) =  SNR ./ (SNR + 1) ;
-    priori_speech = gain(i, :) .* FRAMESMAG(i, :);
+    weiner(i, :) =  SNR ./ (SNR + 1) ;
+    priori_speech = weiner(i, :) .* FRAMESMAG(i, :);
 end
 
 %% Estimate Clean speech
+
+gain = weiner;
 CLEAN = zeros(size(y));
+NOISE = zeros(size(y));
 for i = 1:l
+    noise = real(ifft(sqrt(FRAMESNOISE(i, :)) .*exp(1j*FRAMESPHA(i, :))));
     new_mag = gain(i, :) .* FRAMESMAG(i, :) ;
     clean = new_mag .* exp(1j*FRAMESPHA(i, :));
     clean = real(ifft(clean));
     CLEAN(i*frame_size+1:(i+2)*frame_size) = CLEAN(i*frame_size+1:(i+2)*frame_size) + clean.';
+    NOISE(i*frame_size+1:(i+2)*frame_size) = NOISE(i*frame_size+1:(i+2)*frame_size) + noise.';
 end
 
-%sound(CLEAN, fs)
+%% Show it
+sound(CLEAN(1:100000), fs)
+
+figure;
+plot(y)
+figure;
+plot(CLEAN)
+%figure;
+%plot(noise)
