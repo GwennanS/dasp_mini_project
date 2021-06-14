@@ -8,9 +8,9 @@ n1(numel(s)) = 0;
 n2(numel(s)) = 0;
 n3(numel(s)) = 0;
 n1 = n1(1 : numel(s))*0.05;
-n2 = n2(1 : numel(s))*0.05;
-n3 = n3(1 : numel(s))*0.05;
-n = n2+n3;
+n2 = n2(1 : numel(s))*0.35;
+n3 = n3(1 : numel(s))*0.35;
+n = n2+n3+n1;
 y = s+n;
 %y = y(:,1);
 
@@ -65,11 +65,12 @@ FRAMESNOISE = zeros(l, frame_size*2);
 %filtered = FRAMESPSD - FRAMESNOISE;
 
 sumNOISE = zeros(1, frame_size*2);
-for i = 1:20 
+for i = 1:10 
     sumNOISE = sumNOISE + FRAMESPSD(i, :);
 end
 
-vadNOISE = sumNOISE * 1/5;
+
+vadNOISE = sumNOISE * 1/10;
 for i = 1:l
     FRAMESNOISE(i, :) = vadNOISE;
 end
@@ -113,3 +114,28 @@ figure;
 plot(CLEAN)
 %figure;
 %plot(noise)
+
+%% Evaluation
+%figure;
+%plot(CLEAN.^2-s.^2)
+
+snr1 = 10*log10(mean(s.^2)/mean(n.^2));
+snr2 = 10*log10(mean(CLEAN.^2)/mean((CLEAN-s).^2));
+snr2 = 10*log10(mean(CLEAN.^2)/mean((n).^2));
+
+frame_size_snr = 0.04 * fs;
+num_snr = floor(N/frame_size_snr) -1;
+sum_snr = 0;
+for i = 0:num_snr
+    first_part_snr = sum(abs(y(i*frame_size_snr + 1 : (i+1)*frame_size_snr )), 'all')^2;
+    second_part_snr = sum(abs(y(i*frame_size_snr +1 : (i+1)*frame_size_snr)-CLEAN(i*frame_size_snr +1 : (i+1)*frame_size_snr)))^2;
+    sum_snr = sum_snr + 10*log10(first_part_snr/second_part_snr);
+end
+sum_snr = 1/num_snr * sum_snr;
+
+stoiy = stoi(s, y, fs)
+stoic = stoi(s, CLEAN, fs)
+stoin = stoi(s, NOISE, fs)
+
+
+
